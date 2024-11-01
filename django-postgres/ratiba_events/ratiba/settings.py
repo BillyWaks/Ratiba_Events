@@ -142,10 +142,18 @@ SIMPLE_JWT = {
     'BLACKLIST_AFTER_ROTATION': True,
 }
 
-# Internationalization settings
+# Internationalization/ Time zone settings
+# LANGUAGE_CODE = 'en-us'
+# TIME_ZONE = 'UTC'  # Keep as UTC
+# USE_I18N = True
+# USE_L10N = True
+# USE_TZ = True
+
+# Localization
 LANGUAGE_CODE = 'en-us'
-TIME_ZONE = 'UTC'
+TIME_ZONE = 'Africa/Nairobi'  # Change to East Africa Time
 USE_I18N = True
+USE_L10N = True
 USE_TZ = True
 
 # CORS settings

@@ -12,9 +12,9 @@ class Event(models.Model):
     id = models.AutoField(primary_key=True)  # Explicit primary key
     title = models.CharField(max_length=100)  # Renamed from name to title
     description = models.TextField()
-    image = models.ImageField(upload_to='event_images/', blank=True, null=True)  # Optional image field
-    date = models.DateField(default=timezone.now)  # Separate date field
-    time = models.TimeField(default=timezone.now)  # Separate time field
+    image = models.ImageField(upload_to='event_images/', max_length=500, blank=True, null=True)
+    date = models.DateField(default=timezone.localdate)  # Gets today's date without time
+    time = models.TimeField(default=timezone.now)  # Gets current time
     venue = models.CharField(max_length=255, blank=True)  # Replaces location
     charge = models.CharField(max_length=4, choices=CHARGE_CHOICES, default='free')  # Free or Pay option
 
