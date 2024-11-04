@@ -13,6 +13,7 @@ import datetime
 import environ
 import os
 import django_heroku
+import dj_database_url
 from pathlib import Path
 
 env = environ.Env()
@@ -103,15 +104,18 @@ WSGI_APPLICATION = 'ratiba.wsgi.application'
 
 # Database settings
 DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.postgresql_psycopg2',
-        'NAME': env("DB_NAME"),
-        'USER': env("DB_USER"),
-        'PASSWORD': env("DB_PASSWORD"),
-        'HOST': env("DB_HOST"),
-        'PORT': env("DB_PORT"),
-    }
+    'default': dj_database_url.config(conn_max_age=600, ssl_require=True)
 }
+# DATABASES = {
+#     'default': {
+#         'ENGINE': 'django.db.backends.postgresql_psycopg2',
+#         'NAME': env("DB_NAME"),
+#         'USER': env("DB_USER"),
+#         'PASSWORD': env("DB_PASSWORD"),
+#         'HOST': env("DB_HOST"),
+#         'PORT': env("DB_PORT"),
+#     }
+# }
 
 # Password validation
 AUTH_PASSWORD_VALIDATORS = [
