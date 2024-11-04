@@ -12,6 +12,7 @@ from pathlib import Path
 import datetime
 import environ
 import os
+import django_heroku
 from pathlib import Path
 
 env = environ.Env()
@@ -28,8 +29,8 @@ MEDIA_URL = '/media/'
 SECRET_KEY = env("SECRET_KEY")
 
 # Security settings
-DEBUG = env('DEBUG') == 'True'  # Ensure this is set to 'False' in production
-ALLOWED_HOSTS = []
+DEBUG = env('DEBUG') == 'False'  # Ensure this is set to 'False' in production
+ALLOWED_HOSTS = ['ratiba-events-backend.herokuapp.com']
     # '127.0.0.1',
     # Add your domain name here if you have one
 # ]
@@ -198,3 +199,7 @@ if not DEBUG:
     SECURE_SSL_REDIRECT = True
     SESSION_COOKIE_SECURE = True
     CSRF_COOKIE_SECURE = True
+
+# Heroku settings
+django_heroku.settings(locals(), databases=False)
+# django_heroku.settings(locals())
