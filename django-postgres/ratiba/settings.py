@@ -15,6 +15,7 @@ import environ
 import os
 import django_heroku
 import dj_database_url
+import logging
 from pathlib import Path
 
 env = environ.Env()
@@ -104,17 +105,19 @@ TEMPLATES = [
 WSGI_APPLICATION = 'ratiba.wsgi.application'
 
 # Determine if the app is running on Heroku
+logger = logging.getLogger(__name__)
 IS_HEROKU = 'HEROKU' in os.environ  # Check for a unique Heroku environment variable
 
 if IS_HEROKU:
     # Database settings for Heroku (PostgreSQL)
     DATABASES = {
         'default': dj_database_url.config(
-            default=os.environ.get('DATABASE_URL'),  # Use Heroku's DATABASE_URL
+            default=os.environ.get('DATABASE_URL'),
             conn_max_age=600,
             ssl_require=True
         )
     }
+    logger.info("Using Heroku PostgreSQL database settings.")
 else:
     # Local database settings (PostgreSQL)
     DATABASES = {
@@ -127,6 +130,7 @@ else:
             'PORT': config("DB_PORT"),     # Load from environment
         }
     }
+    logger.info("Using local PostgreSQL database settings.")
 # DATABASES = {
 #     'default': {
 #         'ENGINE': 'django.db.backends.postgresql_psycopg2',
