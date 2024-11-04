@@ -1,5 +1,0 @@
-release: python django-postgres/ratiba_events/manage.py makemigrations --no-input
-release: python django-postgres/ratiba_events/manage.py migrate --no-input
-release: python django-postgres/ratiba_events/manage.py collectstatic --no-input
-
-web: gunicorn django-postgres.ratiba.wsgi
