@@ -9,6 +9,7 @@ https://docs.djangoproject.com/en/5.1/ref/settings/
 """
 
 from pathlib import Path
+from decouple import config  # for env variable handling
 import datetime
 import environ
 import os
@@ -102,10 +103,30 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'ratiba.wsgi.application'
 
-# Database settings
-DATABASES = {
-    'default': dj_database_url.config(conn_max_age=600, ssl_require=True)
-}
+# Determine if the app is running on Heroku
+IS_HEROKU = 'HEROKU' in os.environ  # Check for a unique Heroku environment variable
+
+if IS_HEROKU:
+    # Database settings for Heroku (PostgreSQL)
+    DATABASES = {
+        'default': dj_database_url.config(
+            default=os.environ.get('DATABASE_URL'),  # Use Heroku's DATABASE_URL
+            conn_max_age=600,
+            ssl_require=True
+        )
+    }
+else:
+    # Local database settings (PostgreSQL)
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.postgresql_psycopg2',
+            'NAME': config("DB_NAME"),     # Load from environment
+            'USER': config("DB_USER"),     # Load from environment
+            'PASSWORD': config("DB_PASSWORD"),  # Load from environment
+            'HOST': config("DB_HOST"),     # Load from environment
+            'PORT': config("DB_PORT"),     # Load from environment
+        }
+    }
 # DATABASES = {
 #     'default': {
 #         'ENGINE': 'django.db.backends.postgresql_psycopg2',
