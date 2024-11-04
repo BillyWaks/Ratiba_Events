@@ -3,4 +3,6 @@ release: python django-postgres/manage.py migrate --no-input
 # release: python django-postgres/manage.py collectstatic --no-input
 
 web: gunicorn ratiba.wsgi --log-file -
+web: python manage.py runserver 0.0.0.0:$PORT
+
 
