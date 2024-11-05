@@ -1,5 +1,0 @@
-release: python django-postgres/manage.py makemigrations --no-input && python django-postgres/manage.py migrate --no-input
-# Uncomment if you need to collect static files
-# release: python django-postgres/manage.py collectstatic --no-input
-
-web: gunicorn ratiba.wsgi --log-file -
