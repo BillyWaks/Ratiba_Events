@@ -3,4 +3,4 @@
 # Uncomment if you need to collect static files
 # release: python manage.py collectstatic --no-input
 
-web: gunicorn ratiba.wsgi --log-file -
+web: gunicorn django-postgres.ratiba.wsgi --log-file -
