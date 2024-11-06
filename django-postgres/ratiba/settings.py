@@ -128,6 +128,7 @@ WSGI_APPLICATION = 'ratiba.wsgi.application'
 
 # Determine if the app is running on Heroku
 logger = logging.getLogger(__name__)
+
 IS_HEROKU = os.environ.get('IS_HEROKU', 'False') == 'True' # Check for a unique Heroku environment variable
 
 if IS_HEROKU:
