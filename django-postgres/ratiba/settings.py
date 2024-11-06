@@ -9,10 +9,13 @@ https://docs.djangoproject.com/en/5.1/ref/settings/
 """
 
 from pathlib import Path
+from decouple import config  # for env variable handling
 import datetime
 import environ
 import os
 import django_heroku
+import dj_database_url
+import logging
 from pathlib import Path
 
 env = environ.Env()
@@ -28,12 +31,34 @@ MEDIA_URL = '/media/'
 # Quick-start development settings - unsuitable for production
 SECRET_KEY = env("SECRET_KEY")
 
-# Security settings
-DEBUG = env('DEBUG') == 'False'  # Ensure this is set to 'False' in production
-ALLOWED_HOSTS = ['ratiba-events-backend.herokuapp.com']
-    # '127.0.0.1',
-    # Add your domain name here if you have one
-# ]
+
+# The `DYNO` env var is set on Heroku CI, but it's not a real Heroku app, so we have to
+# also explicitly exclude CI:
+# https://devcenter.heroku.com/articles/heroku-ci#immutable-environment-variables
+# IS_HEROKU_APP = "DYNO" in os.environ and not "CI" in os.environ
+
+# # SECURITY WARNING: don't run with debug turned on in production!
+# if not IS_HEROKU_APP:
+#     DEBUG = True
+
+# On Heroku, it's safe to use a wildcard for `ALLOWED_HOSTS``, since the Heroku router performs
+# validation of the Host header in the incoming HTTP request. On other platforms you may need to
+# list the expected hostnames explicitly in production to prevent HTTP Host header attacks. See:
+# https://docs.djangoproject.com/en/5.1/ref/settings/#std-setting-ALLOWED_HOSTS
+# if IS_HEROKU_APP:
+#     ALLOWED_HOSTS = ["*"]
+# else:
+#     ALLOWED_HOSTS = [".localhost", "127.0.0.1", "[::1]", "0.0.0.0"]
+
+
+
+# # Security settings
+DEBUG = False 
+# #env('DEBUG') #== 'False'  # Ensure this is set to 'False' in production
+ALLOWED_HOSTS = ['djangoratiba.herokuapp.com', 'localhost', '127.0.0.1']
+#     # '127.0.0.1',
+#     # Add your domain name here if you have one
+# # ]
 
 AUTH_USER_MODEL = "authentication.User"
 
@@ -101,17 +126,44 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'ratiba.wsgi.application'
 
-# Database settings
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.postgresql_psycopg2',
-        'NAME': env("DB_NAME"),
-        'USER': env("DB_USER"),
-        'PASSWORD': env("DB_PASSWORD"),
-        'HOST': env("DB_HOST"),
-        'PORT': env("DB_PORT"),
+# Determine if the app is running on Heroku
+logger = logging.getLogger(__name__)
+
+IS_HEROKU = os.environ.get('IS_HEROKU', 'False') == 'True' # Check for a unique Heroku environment variable
+
+if IS_HEROKU:
+    # Database settings for Heroku (PostgreSQL)
+    DATABASES = {
+        'default': dj_database_url.config(
+            default=os.environ.get('HEROKU_POSTGRESQL_ORANGE_URL'),
+            conn_max_age=600,
+            ssl_require=True
+        )
     }
-}
+    logger.info("Using Heroku PostgreSQL database settings.")
+else:
+    # Local database settings (PostgreSQL)
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.postgresql_psycopg2',
+            'NAME': config("DB_NAME"),     # Load from environment
+            'USER': config("DB_USER"),     # Load from environment
+            'PASSWORD': config("DB_PASSWORD"),  # Load from environment
+            'HOST': config("DB_HOST"),     # Load from environment
+            'PORT': config("DB_PORT"),     # Load from environment
+        }
+    }
+    logger.info("Using local PostgreSQL database settings.")
+# DATABASES = {
+#     'default': {
+#         'ENGINE': 'django.db.backends.postgresql_psycopg2',
+#         'NAME': env("DB_NAME"),
+#         'USER': env("DB_USER"),
+#         'PASSWORD': env("DB_PASSWORD"),
+#         'HOST': env("DB_HOST"),
+#         'PORT': env("DB_PORT"),
+#     }
+# }
 
 # Password validation
 AUTH_PASSWORD_VALIDATORS = [
@@ -162,7 +214,25 @@ CORS_ALLOW_ALL_ORIGINS = True
 
 # Static files (CSS, JavaScript, Images)
 STATIC_URL = 'static/'
+# STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
 STATIC_ROOT = BASE_DIR / 'staticfiles'  # For deployment
+# Only if using WhiteNoise for serving static files
+# STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
+
+# # Static files (CSS, JavaScript, images)
+# STATIC_URL = '/static/'
+
+# # Use the 'whitenoise' package for static file handling in production (recommended for Heroku)
+# STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
+
+# # Add any custom static directories here if necessary
+# STATICFILES_DIRS = [
+#     BASE_DIR / "static",
+# ]
+
+# # Ensure you collect static files into the 'staticfiles' directory for Heroku
+# STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
+
 
 # Default primary key field type
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
@@ -193,13 +263,13 @@ LOGGING = {
 }
 
 # Additional security settings for production
-if not DEBUG:
-    SECURE_BROWSER_XSS_FILTER = True
-    SECURE_CONTENT_TYPE_NOSNIFF = True
-    SECURE_SSL_REDIRECT = True
-    SESSION_COOKIE_SECURE = True
-    CSRF_COOKIE_SECURE = True
+# if not DEBUG:
+#     SECURE_BROWSER_XSS_FILTER = True
+#     SECURE_CONTENT_TYPE_NOSNIFF = True
+#     SECURE_SSL_REDIRECT = True
+#     SESSION_COOKIE_SECURE = True
+#     CSRF_COOKIE_SECURE = True
 
 # Heroku settings
-django_heroku.settings(locals(), databases=False)
-# django_heroku.settings(locals())
+# django_heroku.settings(locals(), databases=False)
+django_heroku.settings(locals())

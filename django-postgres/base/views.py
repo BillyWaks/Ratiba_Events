@@ -16,7 +16,7 @@ from rest_framework import generics
 
 class AuthenticatedAPIView(APIView):
     authentication_classes = [JWTAuthentication]
-    permission_classes = [IsAuthenticated]  # Changed to IsAuthenticated
+    permission_classes = [AllowAny]  # Changed to IsAuthenticated
 
 class EventList(AuthenticatedAPIView, generics.ListAPIView):
     """View to list all events."""
@@ -81,10 +81,18 @@ class ListParticipants(AuthenticatedAPIView, generics.ListAPIView):
     serializer_class = ParticipantSerializer
 
     def get_queryset(self):
-        event_id = self.kwargs['event_id']
-        registration_objects = Registration.objects.filter(event_id=event_id)
-        participants_ids = registration_objects.values_list('participant', flat=True)
-        return Participant.objects.filter(id__in=participants_ids)
+        print(f"Kwargs in get_queryset: {self.kwargs}")  # Log kwargs
+        event_id = self.kwargs.get('pk')
+        if event_id:
+            registration_objects = Registration.objects.filter(event_id=event_id)
+            print(f"Registration objects for event_id {event_id}: {registration_objects}")
+            participants_ids = registration_objects.values_list('participant', flat=True)
+            print(f"Participants IDs: {participants_ids}")
+            return Participant.objects.filter(id__in=participants_ids)
+        else:
+            return Participant.objects.none()  # Return empty queryset if no event_id found
+
+
 
 class DeleteEvent(AuthenticatedAPIView, generics.DestroyAPIView):
     """View to delete an event."""
