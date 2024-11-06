@@ -1,1 +1,1 @@
-web: gunicorn ratiba.wsgi:application
+web: gunicorn django-postgres.ratiba.wsgi
