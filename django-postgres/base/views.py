@@ -81,15 +81,17 @@ class ListParticipants(AuthenticatedAPIView, generics.ListAPIView):
     serializer_class = ParticipantSerializer
 
     def get_queryset(self):
-        print(f"Request path: {self.request.path}")  # Log the full request path
         print(f"Kwargs in get_queryset: {self.kwargs}")  # Log kwargs
         event_id = self.kwargs.get('pk')
         if event_id:
             registration_objects = Registration.objects.filter(event_id=event_id)
+            print(f"Registration objects for event_id {event_id}: {registration_objects}")
             participants_ids = registration_objects.values_list('participant', flat=True)
+            print(f"Participants IDs: {participants_ids}")
             return Participant.objects.filter(id__in=participants_ids)
         else:
             return Participant.objects.none()  # Return empty queryset if no event_id found
+
 
 
 class DeleteEvent(AuthenticatedAPIView, generics.DestroyAPIView):
