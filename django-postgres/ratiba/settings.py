@@ -32,7 +32,8 @@ MEDIA_URL = '/media/'
 SECRET_KEY = env("SECRET_KEY")
 
 # Security settings
-DEBUG = env('DEBUG') #== 'False'  # Ensure this is set to 'False' in production
+DEBUG = False 
+#env('DEBUG') #== 'False'  # Ensure this is set to 'False' in production
 ALLOWED_HOSTS = ['ratiba-events-backend.herokuapp.com']
     # '127.0.0.1',
     # Add your domain name here if you have one
@@ -222,13 +223,13 @@ LOGGING = {
 }
 
 # Additional security settings for production
-if not DEBUG:
-    SECURE_BROWSER_XSS_FILTER = True
-    SECURE_CONTENT_TYPE_NOSNIFF = True
-    SECURE_SSL_REDIRECT = True
-    SESSION_COOKIE_SECURE = True
-    CSRF_COOKIE_SECURE = True
+# if not DEBUG:
+#     SECURE_BROWSER_XSS_FILTER = True
+#     SECURE_CONTENT_TYPE_NOSNIFF = True
+#     SECURE_SSL_REDIRECT = True
+#     SESSION_COOKIE_SECURE = True
+#     CSRF_COOKIE_SECURE = True
 
 # Heroku settings
-django_heroku.settings(locals(), databases=False)
-# django_heroku.settings(locals())
+# django_heroku.settings(locals(), databases=False)
+django_heroku.settings(locals())
