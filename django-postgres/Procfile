@@ -1,2 +1,1 @@
-release: python manage.py makemigrations --no-input && python manage.py migrate --no-input
-web: gunicorn ratiba.wsgi
+web: gunicorn django-postgres/ratiba.wsgi
