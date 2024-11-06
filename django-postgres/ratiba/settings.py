@@ -124,7 +124,7 @@ TEMPLATES = [
     },
 ]
 
-WSGI_APPLICATION = 'django_postgres.ratiba.wsgi.application'
+WSGI_APPLICATION = 'django_postgres/ratiba.wsgi.application'
 
 # Determine if the app is running on Heroku
 logger = logging.getLogger(__name__)
