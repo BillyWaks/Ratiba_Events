@@ -1,2 +1,2 @@
 release: python django-postgres/manage.py migrate --noinput
-web: gunicorn ratiba.wsgi --log-file -
+web: sh -c 'cd django-postgres && exec gunicorn ratiba.wsgi:application --log-file -'
