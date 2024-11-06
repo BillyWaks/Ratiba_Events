@@ -55,7 +55,7 @@ SECRET_KEY = env("SECRET_KEY")
 # # Security settings
 DEBUG = False 
 # #env('DEBUG') #== 'False'  # Ensure this is set to 'False' in production
-ALLOWED_HOSTS = ['djangoratiba.herokuapp.com']
+ALLOWED_HOSTS = ['djangoratiba.herokuapp.com', 'localhost']
 #     # '127.0.0.1',
 #     # Add your domain name here if you have one
 # # ]
