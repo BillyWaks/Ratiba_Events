@@ -1,3 +1,4 @@
 release: python manage.py makemigrations --no-input && python manage.py migrate --no-input
 python manage.py collectstatic --noinput
 web: gunicorn ratiba.wsgi
+web: python django-postgres/manage.py runserver 0.0.0.0:$PORT
