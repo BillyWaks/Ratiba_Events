@@ -81,7 +81,8 @@ class ListParticipants(AuthenticatedAPIView, generics.ListAPIView):
     serializer_class = ParticipantSerializer
 
     def get_queryset(self):
-        event_id = self.kwargs['event_id']
+        # Use 'pk' instead of 'event_id'
+        event_id = self.kwargs['pk']
         registration_objects = Registration.objects.filter(event_id=event_id)
         participants_ids = registration_objects.values_list('participant', flat=True)
         return Participant.objects.filter(id__in=participants_ids)
