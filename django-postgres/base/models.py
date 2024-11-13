@@ -41,12 +41,13 @@ class Registration(models.Model):
         ('confirmed', 'Confirmed'),
         ('pending', 'Pending'),
         ('cancelled', 'Cancelled'),
+        ('rsvp', 'RSVP'),
     ]
 
     event = models.ForeignKey(Event, on_delete=models.CASCADE)
     participant = models.ForeignKey(Participant, on_delete=models.CASCADE)
     timestamp = models.DateTimeField(default=timezone.now)
-    status = models.CharField(max_length=10, choices=STATUS_CHOICES, default='pending')  # Status field
+    status = models.CharField(max_length=10, choices=STATUS_CHOICES, default='pending')
 
     class Meta:
         unique_together = ('event', 'participant')
@@ -54,6 +55,15 @@ class Registration(models.Model):
 
     def __str__(self):
         return f"{self.participant} registered for {self.event}"
+    
+class Booking(models.Model):
+    event = models.ForeignKey(Event, on_delete=models.CASCADE)
+    participant = models.ForeignKey(Participant, on_delete=models.CASCADE)
+    timestamp = models.DateTimeField(default=timezone.now)
+    booked = models.BooleanField(default=False)  # Whether the participant has booked their spot
+
+    def __str__(self):
+        return f"{self.participant} booked for {self.event}"
 
 
 
