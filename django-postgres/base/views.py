@@ -5,7 +5,11 @@ from rest_framework import generics, status
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from django.shortcuts import get_object_or_404
+<<<<<<< HEAD
 from .models import Event, Participant, Registration, Booking
+=======
+from .models import Event, Participant, Registration
+>>>>>>> 046850b (updated_Booking_views)
 from .serializers import EventSerializer, ParticipantSerializer, RegistrationSerializer, BookingSerializer
 from django.utils import timezone
 from django.utils.timezone import make_aware
