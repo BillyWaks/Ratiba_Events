@@ -91,6 +91,67 @@ class ListParticipants(AuthenticatedAPIView, generics.ListAPIView):
             return Participant.objects.filter(id__in=participants_ids)
         else:
             return Participant.objects.none()  # Return empty queryset if no event_id found
+        
+        
+class BookEvent(AuthenticatedAPIView):
+    """API to book a spot for an event."""
+    
+    @swagger_auto_schema(request_body=BookingSerializer)
+    def post(self, request, *args, **kwargs):
+        event_id = request.data.get('event_id')
+        participant_data = request.data.get('participant')
+        
+        event = get_object_or_404(Event, pk=event_id)
+        participant_serializer = ParticipantSerializer(data=participant_data)
+        
+        if participant_serializer.is_valid():
+            participant_email = participant_data['email']
+            participant, created = Participant.objects.get_or_create(
+                email=participant_email,
+                defaults=participant_serializer.validated_data
+            )
+            
+            # Check for existing booking
+            booking, created = Booking.objects.get_or_create(event=event, participant=participant)
+            if booking.booked:
+                return Response({"error": "Participant has already booked for this event."}, 
+                                status=status.HTTP_400_BAD_REQUEST)
+            
+            booking.booked = True  # Mark as booked
+            booking.save()
+            
+            return Response({"message": "Booking successful!"}, status=status.HTTP_200_OK)
+        
+        return Response(participant_serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+
+class RSVPEvent(AuthenticatedAPIView):
+    """API to RSVP to an event."""
+    
+    @swagger_auto_schema(request_body=RegistrationSerializer)
+    def post(self, request, *args, **kwargs):
+        event_id = request.data.get('event_id')
+        participant_data = request.data.get('participant')
+        
+        event = get_object_or_404(Event, pk=event_id)
+        participant_serializer = ParticipantSerializer(data=participant_data)
+        
+        if participant_serializer.is_valid():
+            participant_email = participant_data['email']
+            participant, created = Participant.objects.get_or_create(
+                email=participant_email,
+                defaults=participant_serializer.validated_data
+            )
+            
+            # Check if already registered and RSVP status
+            registration, created = Registration.objects.get_or_create(event=event, participant=participant)
+            registration.status = 'rsvp'  # Mark as RSVP
+            registration.save()
+            
+            return Response({"message": "RSVP successful!"}, status=status.HTTP_200_OK)
+        
+        return Response(participant_serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
 
