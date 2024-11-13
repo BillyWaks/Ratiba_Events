@@ -3,7 +3,7 @@ from django.urls import path
 from .views import (
     EventList, EventDetail, RegisterEvent, CreateEvent,
     ListParticipants, PastEventList, FutureEventList,
-    DeleteEvent, DeleteParticipant, BookEvent, RSVPEvent
+    DeleteEvent, DeleteParticipant, RSVPEvent
 )
 
 urlpatterns = [
@@ -17,5 +17,5 @@ urlpatterns = [
     path('events/<int:pk>/delete/', DeleteEvent.as_view(), name='delete-event'),  # Delete an event
     path('participants/<int:pk>/delete/', DeleteParticipant.as_view(), name='delete-participant'),  # Delete a participant
     path('events/rsvp/', RSVPEvent.as_view(), name='rsvp-event'),
-    path('events/book/', BookEvent.as_view(), name='book-event'),
+    # path('events/book/', BookEvent.as_view(), name='book-event'),
 ]

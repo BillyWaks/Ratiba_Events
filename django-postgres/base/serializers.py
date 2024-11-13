@@ -1,7 +1,8 @@
 # base/serializers.py
 from rest_framework import serializers
-from .models import Event, Participant, Registration, Booking
+from .models import Event, Participant, Registration
 from django.shortcuts import get_object_or_404
+from django.utils import timezone
 
 class EventSerializer(serializers.ModelSerializer):
     class Meta:
@@ -51,43 +52,48 @@ class RegistrationSerializer(serializers.ModelSerializer):
         instance.save()
 
         return instance
+    
+class RSVPSerializer(serializers.Serializer):
+    event_id = serializers.IntegerField()
+    participant = ParticipantSerializer()
 
-
-class BookingSerializer(serializers.ModelSerializer):
-    event_id = serializers.IntegerField(source='event.id', write_only=True)  # Accept event ID directly
-    participant = ParticipantSerializer()  # Still allows nested input for participant
-
-    class Meta:
-        model = Booking
-        fields = ['id', 'event_id', 'participant', 'timestamp', 'status']
+    def validate_event_id(self, value):
+        """Ensure the event exists and is in the future."""
+        event = get_object_or_404(Event, id=value)
+        
+        # Check if the event date/time has passed
+        event_datetime = timezone.make_aware(
+            timezone.datetime.combine(event.date, event.time)
+        )
+        if event_datetime < timezone.now():
+            raise serializers.ValidationError("Cannot RSVP to an event that has already passed.")
+        
+        return value
 
     def create(self, validated_data):
-        participant_data = validated_data.pop('participant')
-        event_id = validated_data.pop('event_id')  # Get event ID from validated data
+        """Handle RSVP creation."""
+        event_id = validated_data['event_id']
+        participant_data = validated_data['participant']
 
-        # Retrieve or create the participant instance
-        participant, created = Participant.objects.get_or_create(**participant_data)
+        # Retrieve or create the participant
+        participant, created = Participant.objects.get_or_create(
+            email=participant_data['email'],
+            defaults=participant_data
+        )
 
-        # Retrieve the event instance by ID or raise an error
+        # Retrieve the event instance by ID
         event = get_object_or_404(Event, id=event_id)
 
-        # Create the booking instance
-        booking = Booking.objects.create(participant=participant, event=event, **validated_data)
-        return booking
+        # Retrieve or create the registration and set the status to 'rsvp'
+        registration, created = Registration.objects.get_or_create(
+            event=event,
+            participant=participant,
+            defaults={'status': 'rsvp'}
+        )
 
-    def update(self, instance, validated_data):
-        event_data = validated_data.pop('event', None)
-        participant_data = validated_data.pop('participant', None)
+        # If the registration already exists but isn't RSVP, update it
+        if not created and registration.status != 'rsvp':
+            registration.status = 'rsvp'
+            registration.save()
 
-        if participant_data:
-            # Update participant instance
-            for attr, value in participant_data.items():
-                setattr(instance.participant, attr, value)
-            instance.participant.save()
-
-        # Update booking instance
-        for attr, value in validated_data.items():
-            setattr(instance, attr, value)
-        instance.save()
-
-        return instance
+        return registration
