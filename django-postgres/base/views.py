@@ -10,10 +10,12 @@ from django.utils.timezone import make_aware
 from drf_yasg.utils import swagger_auto_schema
 from datetime import datetime
 from django.db.models import Q
-from .models import Event, Participant, Registration
-from .serializers import EventSerializer, ParticipantSerializer, RegistrationSerializer, RSVPSerializer
+from .models import Event, Participant, Registration, Booking
+from .serializers import EventSerializer, ParticipantSerializer, RegistrationSerializer, RSVPSerializer, BookingSerializer
 from rest_framework.parsers import MultiPartParser, FormParser
+import logging
 
+logger = logging.getLogger(__name__)
 class AuthenticatedAPIView(APIView):
     authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated]
@@ -111,6 +113,27 @@ class ListParticipants(AuthenticatedAPIView, generics.ListAPIView):
             return Participant.objects.filter(id__in=participants_ids)
         else:
             return Participant.objects.none()
+        
+class CreateBooking(APIView):
+    def post(self, request, *args, **kwargs):
+        serializer = BookingSerializer(data=request.data)
+        if serializer.is_valid():
+            # Perform any additional checks (e.g., booking availability) before saving
+            booking = serializer.save()  # Save the new booking
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+        
+class UpdateBooking(APIView):
+    def put(self, request, booking_id, *args, **kwargs):
+        booking = Booking.objects.get(id=booking_id)
+        
+        # Confirm the booking by setting the 'booked' field to True
+        booking.booked = True
+        booking.save()
+        
+        return Response({"message": "Booking confirmed", "booking_id": booking.id}, status=status.HTTP_200_OK)
+
 
 class RSVPEvent(APIView):
     """API to RSVP to an event."""
@@ -120,9 +143,17 @@ class RSVPEvent(APIView):
         serializer = RSVPSerializer(data=request.data)
 
         if serializer.is_valid():
-            registration = serializer.save()  # Handles both creation and status update
-            return Response({"message": "RSVP successful!", "registration_id": registration.id}, status=status.HTTP_200_OK)
-        
+            # Save the registration (create or update)
+            registration = serializer.save()
+
+            # Log the successful RSVP (optional)
+            logger.info(f"RSVP successful for participant {registration.participant.email} to event {registration.event.id}")
+
+            return Response({
+                "message": "RSVP successful!",
+                "registration_id": registration.id
+            }, status=status.HTTP_201_CREATED)  # Use 201 for successful creation
+
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
     
 class DeleteEvent(AuthenticatedAPIView, generics.DestroyAPIView):

@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import Event, Participant, Registration
+from .models import Event, Participant, Registration, Booking
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
 from django.conf import settings
@@ -20,11 +20,11 @@ class EventSerializer(serializers.ModelSerializer):
         """Returns the full URL for the image."""
         if obj.image:
             request = self.context.get('request')
-            if request is not None:
+            if request:
                 return request.build_absolute_uri(obj.image.url)
-            return settings.MEDIA_URL + str(obj.image)
+            return obj.image.url  # Directly return the image URL if no request context
         return None
-    
+
 class ParticipantSerializer(serializers.ModelSerializer):
     class Meta:
         model = Participant
@@ -67,7 +67,26 @@ class RegistrationSerializer(serializers.ModelSerializer):
         instance.save()
 
         return instance
+
+class BookingSerializer(serializers.ModelSerializer):
+    event = serializers.PrimaryKeyRelatedField(queryset=Event.objects.all())
+    participant = serializers.PrimaryKeyRelatedField(queryset=Participant.objects.all())
     
+    class Meta:
+        model = Booking
+        fields = ['id', 'event', 'participant', 'timestamp', 'booked']
+    
+    def create(self, validated_data):
+        """Custom create method, add any additional logic here if needed"""
+        booking = Booking.objects.create(**validated_data)
+        return booking
+
+    def update(self, instance, validated_data):
+        """Custom update method."""
+        instance.booked = validated_data.get('booked', instance.booked)
+        instance.save()
+        return instance
+
 class RSVPSerializer(serializers.Serializer):
     event_id = serializers.IntegerField()
     participant = ParticipantSerializer()
@@ -83,6 +102,13 @@ class RSVPSerializer(serializers.Serializer):
         if event_datetime < timezone.now():
             raise serializers.ValidationError("Cannot RSVP to an event that has already passed.")
         
+        return value
+
+    def validate_participant(self, value):
+        """Ensure participant data is valid."""
+        email = value.get('email')
+        if not email:
+            raise serializers.ValidationError("Participant must have an email address.")
         return value
 
     def create(self, validated_data):
