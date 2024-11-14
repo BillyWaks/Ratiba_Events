@@ -1,5 +1,5 @@
 # base/views.py
-from rest_framework.permissions import IsAuthenticated
+from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework_simplejwt.authentication import JWTAuthentication
 from rest_framework import generics, status
 from rest_framework.views import APIView
@@ -18,7 +18,7 @@ import logging
 logger = logging.getLogger(__name__)
 class AuthenticatedAPIView(APIView):
     authentication_classes = [JWTAuthentication]
-    permission_classes = [IsAuthenticated]
+    permission_classes = [AllowAny]
 
 class EventList(AuthenticatedAPIView, generics.ListAPIView):
     """View to list all events."""
