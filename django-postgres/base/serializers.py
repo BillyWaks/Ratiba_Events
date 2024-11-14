@@ -24,6 +24,9 @@ class EventSerializer(serializers.ModelSerializer):
                 return request.build_absolute_uri(obj.image.url)
             return obj.image.url  # Directly return the image URL if no request context
         return None
+    
+class EventImageUploadSerializer(serializers.Serializer):
+    image = serializers.ImageField(required=True)
 
 class ParticipantSerializer(serializers.ModelSerializer):
     class Meta:

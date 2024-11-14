@@ -11,7 +11,7 @@ from drf_yasg.utils import swagger_auto_schema
 from datetime import datetime
 from django.db.models import Q
 from .models import Event, Participant, Registration, Booking
-from .serializers import EventSerializer, ParticipantSerializer, RegistrationSerializer, RSVPSerializer, BookingSerializer
+from .serializers import EventSerializer, ParticipantSerializer, RegistrationSerializer, RSVPSerializer, BookingSerializer, EventImageUploadSerializer
 from rest_framework.parsers import MultiPartParser, FormParser
 import logging
 
@@ -39,14 +39,15 @@ class EventImageUploadView(APIView):
     parser_classes = (MultiPartParser, FormParser)
 
     def post(self, request, event_id):
-        event = Event.objects.get(id=event_id)
-        image = request.FILES.get('image')
+        event = get_object_or_404(Event, id=event_id)
+        serializer = EventImageUploadSerializer(data=request.data)
 
-        if image:
+        if serializer.is_valid():
+            image = serializer.validated_data['image']
             event.image = image
             event.save()
             return Response({"message": "Image uploaded successfully"}, status=status.HTTP_200_OK)
-        return Response({"message": "No image provided"}, status=status.HTTP_400_BAD_REQUEST)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 class EventDetail(AuthenticatedAPIView, generics.RetrieveAPIView):
     """View to retrieve details of a specific event."""
