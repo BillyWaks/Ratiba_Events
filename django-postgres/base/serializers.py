@@ -1,14 +1,30 @@
-# base/serializers.py
 from rest_framework import serializers
 from .models import Event, Participant, Registration
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
+from django.conf import settings
+from datetime import datetime
+from rest_framework.fields import ImageField
 
 class EventSerializer(serializers.ModelSerializer):
+    image_url = serializers.SerializerMethodField()
+
+    # Explicitly define the image field as an ImageField
+    image = ImageField(required=False, allow_null=True)
+
     class Meta:
         model = Event
-        fields = ['id', 'title', 'description', 'image', 'date', 'time', 'venue', 'charge']  # Added image field
+        fields = ['id', 'title', 'description', 'image', 'date', 'time', 'venue', 'charge', 'image_url']
 
+    def get_image_url(self, obj):
+        """Returns the full URL for the image."""
+        if obj.image:
+            request = self.context.get('request')
+            if request is not None:
+                return request.build_absolute_uri(obj.image.url)
+            return settings.MEDIA_URL + str(obj.image)
+        return None
+    
 class ParticipantSerializer(serializers.ModelSerializer):
     class Meta:
         model = Participant
@@ -16,7 +32,7 @@ class ParticipantSerializer(serializers.ModelSerializer):
 
 class RegistrationSerializer(serializers.ModelSerializer):
     event_id = serializers.IntegerField(source='event.id', write_only=True)  # Accept event ID directly
-    participant = ParticipantSerializer()  # Still allows nested input for participant
+    participant = ParticipantSerializer()  # Allows nested input for participant
 
     class Meta:
         model = Registration
@@ -37,7 +53,6 @@ class RegistrationSerializer(serializers.ModelSerializer):
         return registration
 
     def update(self, instance, validated_data):
-        event_data = validated_data.pop('event', None)
         participant_data = validated_data.pop('participant', None)
 
         if participant_data:

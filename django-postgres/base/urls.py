@@ -3,7 +3,7 @@ from django.urls import path
 from .views import (
     EventList, EventDetail, RegisterEvent, CreateEvent,
     ListParticipants, PastEventList, FutureEventList,
-    DeleteEvent, DeleteParticipant, RSVPEvent
+    DeleteEvent, DeleteParticipant, RSVPEvent, EventImageUploadView
 )
 
 urlpatterns = [
@@ -11,6 +11,7 @@ urlpatterns = [
     path('events/<int:pk>/', EventDetail.as_view(), name='event-detail'),  # Retrieve a specific event
     path('register/', RegisterEvent.as_view(), name='register-event'),  # Register a participant for an event
     path('events/create/', CreateEvent.as_view(), name='create-event'),  # Create a new event
+    path('events/<int:event_id>/upload/', EventImageUploadView.as_view(), name='event-image-upload'),
     path('events/<int:pk>/participants/', ListParticipants.as_view(), name='list-participants'),  # List participants of a specific event
     path('events/past/', PastEventList.as_view(), name='past-event-list'),  # List past events
     path('events/future/', FutureEventList.as_view(), name='future-event-list'),  # List future events

@@ -1,37 +1,60 @@
 # base/views.py
-from rest_framework.permissions import IsAuthenticated, AllowAny
+from rest_framework.permissions import IsAuthenticated
 from rest_framework_simplejwt.authentication import JWTAuthentication
 from rest_framework import generics, status
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from django.shortcuts import get_object_or_404
-from .models import Event, Participant, Registration
-from .serializers import EventSerializer, ParticipantSerializer, RegistrationSerializer, RSVPSerializer
 from django.utils import timezone
 from django.utils.timezone import make_aware
 from drf_yasg.utils import swagger_auto_schema
-from datetime import datetime  # Make sure to import datetime
+from datetime import datetime
 from django.db.models import Q
-from rest_framework import generics
+from .models import Event, Participant, Registration
+from .serializers import EventSerializer, ParticipantSerializer, RegistrationSerializer, RSVPSerializer
+from rest_framework.parsers import MultiPartParser, FormParser
 
 class AuthenticatedAPIView(APIView):
     authentication_classes = [JWTAuthentication]
-    permission_classes = [AllowAny]  # Changed to IsAuthenticated
+    permission_classes = [IsAuthenticated]
 
 class EventList(AuthenticatedAPIView, generics.ListAPIView):
     """View to list all events."""
     queryset = Event.objects.all()
     serializer_class = EventSerializer
 
+    def list(self, request, *args, **kwargs):
+        queryset = self.get_queryset()
+        serializer = EventSerializer(queryset, many=True, context={'request': request})
+        return Response(serializer.data)
+
 class CreateEvent(AuthenticatedAPIView, generics.CreateAPIView):
     """View to create a new event."""
     queryset = Event.objects.all()
     serializer_class = EventSerializer
+    
+class EventImageUploadView(APIView):
+    parser_classes = (MultiPartParser, FormParser)
+
+    def post(self, request, event_id):
+        event = Event.objects.get(id=event_id)
+        image = request.FILES.get('image')
+
+        if image:
+            event.image = image
+            event.save()
+            return Response({"message": "Image uploaded successfully"}, status=status.HTTP_200_OK)
+        return Response({"message": "No image provided"}, status=status.HTTP_400_BAD_REQUEST)
 
 class EventDetail(AuthenticatedAPIView, generics.RetrieveAPIView):
     """View to retrieve details of a specific event."""
     queryset = Event.objects.all()
     serializer_class = EventSerializer
+
+    def get(self, request, *args, **kwargs):
+        event_instance = self.get_object()
+        serializer = EventSerializer(event_instance, context={'request': request})
+        return Response(serializer.data)
 
 class RegisterEvent(AuthenticatedAPIView):
     """View to register a participant for an event."""
@@ -81,17 +104,13 @@ class ListParticipants(AuthenticatedAPIView, generics.ListAPIView):
     serializer_class = ParticipantSerializer
 
     def get_queryset(self):
-        print(f"Kwargs in get_queryset: {self.kwargs}")  # Log kwargs
         event_id = self.kwargs.get('pk')
         if event_id:
             registration_objects = Registration.objects.filter(event_id=event_id)
-            print(f"Registration objects for event_id {event_id}: {registration_objects}")
             participants_ids = registration_objects.values_list('participant', flat=True)
-            print(f"Participants IDs: {participants_ids}")
             return Participant.objects.filter(id__in=participants_ids)
         else:
-            return Participant.objects.none()  # Return empty queryset if no event_id found
-        
+            return Participant.objects.none()
 
 class RSVPEvent(APIView):
     """API to RSVP to an event."""
@@ -101,7 +120,6 @@ class RSVPEvent(APIView):
         serializer = RSVPSerializer(data=request.data)
 
         if serializer.is_valid():
-            # Create the registration and return the response
             registration = serializer.save()  # Handles both creation and status update
             return Response({"message": "RSVP successful!", "registration_id": registration.id}, status=status.HTTP_200_OK)
         
@@ -114,8 +132,8 @@ class DeleteEvent(AuthenticatedAPIView, generics.DestroyAPIView):
 
     @swagger_auto_schema(operation_summary="Delete an event")
     def delete(self, request, *args, **kwargs):
-        event = self.get_object()  # Retrieve the event instance
-        event.delete()  # Delete the event
+        event = self.get_object()
+        event.delete()
         return Response({"message": "Event deleted successfully."}, status=status.HTTP_204_NO_CONTENT)
 
 class DeleteParticipant(AuthenticatedAPIView, generics.DestroyAPIView):
@@ -125,8 +143,8 @@ class DeleteParticipant(AuthenticatedAPIView, generics.DestroyAPIView):
 
     @swagger_auto_schema(operation_summary="Delete a participant")
     def delete(self, request, *args, **kwargs):
-        participant = self.get_object()  # Retrieve the participant instance
-        participant.delete()  # Delete the participant
+        participant = self.get_object()
+        participant.delete()
         return Response({"message": "Participant deleted successfully."}, status=status.HTTP_204_NO_CONTENT)
 
 class PastEventList(AuthenticatedAPIView, generics.ListAPIView):
@@ -135,7 +153,6 @@ class PastEventList(AuthenticatedAPIView, generics.ListAPIView):
 
     def get_queryset(self):
         now = timezone.now()
-        # Filter for events that have already happened
         return Event.objects.filter(
             Q(date__lt=now.date()) | 
             (Q(date=now.date()) & Q(time__lt=now.time()))
@@ -147,7 +164,6 @@ class FutureEventList(AuthenticatedAPIView, generics.ListAPIView):
 
     def get_queryset(self):
         now = timezone.now()
-        # Filter for events that are scheduled for the future
         return Event.objects.filter(
             Q(date__gt=now.date()) | 
             (Q(date=now.date()) & Q(time__gte=now.time()))
